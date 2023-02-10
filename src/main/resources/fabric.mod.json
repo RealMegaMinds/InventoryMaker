@@ -8,33 +8,23 @@
 		"Hoid2"
 	],
 	"contact": {
-		"sources": ""
+		"sources": "https://github.com/RealMegaMinds/InventoryMaker"
 	},
-	"license": "CC0-1.0",
-	"icon": "assets/inventory-maker/icon.png",
+	"license": "MIT",
+	"icon": "assets/inventorymaker/icon.png",
 	"environment": "*",
 	"entrypoints": {
 		"main": [
-			"megaminds.inventorymaker.ExampleMod"
-		],
-		"client": [
-			"megaminds.inventorymaker.ExampleModClient"
+			"megaminds.inventorymaker.InventoryMaker"
 		]
 	},
 	"mixins": [
-		"inventory-maker.mixins.json",
-		{
-			"config": "inventory-maker.client.mixins.json",
-			"environment": "client"
-		}
+		"inventorymaker.mixins.json"
 	],
 	"depends": {
 		"fabricloader": ">=0.14.14",
 		"minecraft": "~1.19.3",
 		"java": ">=17",
 		"fabric-api": "*"
-	},
-	"suggests": {
-		"another-mod": "*"
 	}
 }
