@@ -1,0 +1,40 @@
+{
+	"schemaVersion": 1,
+	"id": "inventorymaker",
+	"version": "${version}",
+	"name": "Inventory Maker",
+	"description": "Allows creation of inventories using commands.",
+	"authors": [
+		"Hoid2"
+	],
+	"contact": {
+		"sources": ""
+	},
+	"license": "CC0-1.0",
+	"icon": "assets/inventory-maker/icon.png",
+	"environment": "*",
+	"entrypoints": {
+		"main": [
+			"megaminds.inventorymaker.ExampleMod"
+		],
+		"client": [
+			"megaminds.inventorymaker.ExampleModClient"
+		]
+	},
+	"mixins": [
+		"inventory-maker.mixins.json",
+		{
+			"config": "inventory-maker.client.mixins.json",
+			"environment": "client"
+		}
+	],
+	"depends": {
+		"fabricloader": ">=0.14.14",
+		"minecraft": "~1.19.3",
+		"java": ">=17",
+		"fabric-api": "*"
+	},
+	"suggests": {
+		"another-mod": "*"
+	}
+}
