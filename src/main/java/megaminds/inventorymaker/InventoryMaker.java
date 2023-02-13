@@ -8,6 +8,8 @@ import net.minecraft.util.Identifier;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -21,7 +23,10 @@ public class InventoryMaker implements ModInitializer {
 	@Override
 	@SuppressWarnings("java:S2696")
 	public void onInitialize() {
-		ServerLifecycleEvents.SERVER_STARTED.register(s->server = s);
+		ServerLifecycleEvents.SERVER_STARTED.register(s-> {
+			server = s;
+			InventoryLoader.list().forEach(i->INVENTORIES.putIfAbsent(i, null));
+		});
 		ServerLifecycleEvents.SERVER_STOPPED.register(s->server = null);
 
 		CommandRegistrationCallback.EVENT.register(Commands::register);
@@ -37,6 +42,10 @@ public class InventoryMaker implements ModInitializer {
 
 	public static SavableInventory removeInventory(Identifier id) {
 		return INVENTORIES.remove(id);
+	}
+
+	public static Set<Identifier> listInventories() {
+		return Set.copyOf(INVENTORIES.keySet());
 	}
 
 	public static MinecraftServer getServer() {

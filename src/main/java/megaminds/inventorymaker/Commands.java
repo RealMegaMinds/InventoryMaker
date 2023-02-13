@@ -9,111 +9,150 @@ import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.exceptions.DynamicCommandExceptionType;
+import com.mojang.brigadier.suggestion.SuggestionProvider;
 
 import net.minecraft.command.CommandRegistryAccess;
 import net.minecraft.command.CommandSource;
-import net.minecraft.command.argument.EntityArgumentType;
-import net.minecraft.command.argument.IdentifierArgumentType;
-import net.minecraft.command.argument.RegistryEntryArgumentType;
-import net.minecraft.command.argument.TextArgumentType;
+import static net.minecraft.command.argument.EntityArgumentType.players;
+import static net.minecraft.command.argument.EntityArgumentType.getOptionalPlayers;
+import static net.minecraft.command.argument.IdentifierArgumentType.identifier;
+import static net.minecraft.command.argument.IdentifierArgumentType.getIdentifier;
+import static net.minecraft.command.argument.RegistryEntryArgumentType.registryEntry;
+import static net.minecraft.command.argument.RegistryEntryArgumentType.getRegistryEntry;
+import static net.minecraft.command.argument.TextArgumentType.text;
+import static net.minecraft.command.argument.TextArgumentType.getTextArgument;
 import net.minecraft.registry.Registries;
 import net.minecraft.registry.RegistryKeys;
-import net.minecraft.server.command.CommandManager;
+import net.minecraft.server.command.CommandManager.RegistrationEnvironment;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.text.Text;
+import net.minecraft.util.Identifier;
 
 public class Commands {
 	private static final DynamicCommandExceptionType ALREADY_EXISTS_EXCEPTION = new DynamicCommandExceptionType(id->Text.literal("Another inventory with id: " + id + " exists."));
 	private static final DynamicCommandExceptionType DOESNT_EXISTS_EXCEPTION = new DynamicCommandExceptionType(id->Text.literal("No inventory with id: " + id + " exists."));
+	private static final SuggestionProvider<ServerCommandSource> TYPE_SUGGESTER = (context, builder) -> CommandSource.suggestFromIdentifier(Registries.SCREEN_HANDLER.stream(), builder, Registries.SCREEN_HANDLER::getId, t->Text.empty());
+	private static final SuggestionProvider<ServerCommandSource> CHECK_SUGGESTER = (context, builder) -> CommandSource.suggestIdentifiers(context.getSource().getServer().getPredicateManager().getIds(), builder);
+	private static final SuggestionProvider<ServerCommandSource> ID_SUGGESTER = (context, builder) -> CommandSource.suggestIdentifiers(InventoryMaker.listInventories(), builder);
 
-	public static void register(CommandDispatcher<ServerCommandSource> dispatcher, CommandRegistryAccess registryAccess, CommandManager.RegistrationEnvironment environment) {
-		var root = literal("inv");
+	private static final String ID_ARG = "id";
+	private static final String CREATE_ARG = "create";
+	private static final String TYPE_ARG = "type";
+	private static final String TITLE_ARG = "title";
+	private static final String EDIT_ARG = "edit";
+	private static final String CHECKER_ARG = "checker";
+	private static final String OPEN_ARG = "open";
+	private static final String TARGET_ARG = "target";
+	private static final String DELETE_ARG = "delete";
 
-		var create = literal("create");
-		var edit = literal("edit");
-		var open = literal("open");
-		var delete = literal("delete")
-				.then(argument("id", IdentifierArgumentType.identifier())
-						.suggests(null)
-						.executes(null));
+	private Commands() {}
 
+	@SuppressWarnings("java:S1172")
+	public static void register(CommandDispatcher<ServerCommandSource> dispatcher, CommandRegistryAccess registryAccess, RegistrationEnvironment environment) {
+		var root = literal(InventoryMaker.MODID);
 
-		var typeArg = argument("type", RegistryEntryArgumentType.registryEntry(accessor, RegistryKeys.SCREEN_HANDLER))
-				.suggests((context, builder) -> CommandSource.suggestFromIdentifier(Registries.SCREEN_HANDLER.stream(), builder, Registries.SCREEN_HANDLER::getId, t->Text.empty()));
-		var idArg = argument("id", IdentifierArgumentType.identifier())
-				.executes(this::onMake);
-		var titleArg = argument("title", TextArgumentType.text())
-				.executes(this::onMake);
-		var checker = literal("checker");
-		var checkerArg = argument("checker", IdentifierArgumentType.identifier())
-				.suggests((context, builder) -> CommandSource.suggestIdentifiers(context.getSource().getServer().getPredicateManager().getIds(), builder))
-				.executes(this::onMake);
+		var create = literal(CREATE_ARG)
+				.then(argument(TYPE_ARG, registryEntry(registryAccess, RegistryKeys.SCREEN_HANDLER))
+						.suggests(TYPE_SUGGESTER)
+						.then(argument(ID_ARG, identifier())
+								.executes(Commands::onMake)
+								.then(argument(TITLE_ARG, text())
+										.executes(Commands::onMake))));
 
-		var id2Arg = argument("id", IdentifierArgumentType.identifier())
-				.suggests((context, builder) -> CommandSource.suggestIdentifiers(inventories.keySet(), builder))
-				.requires(ServerCommandSource::isExecutedByPlayer)
-				.executes(this::onOpen);
-		var target = argument("target", EntityArgumentType.players())
-				.executes(this::onOpen);
-		var id3Arg = argument("id", IdentifierArgumentType.identifier())
-				.suggests((context, builder) -> CommandSource.suggestIdentifiers(inventories.keySet(), builder))
-				.executes(this::onDelete);
+		var edit = literal(EDIT_ARG)
+				.then(argument(ID_ARG, identifier())
+						.suggests(ID_SUGGESTER)
+						.then(literal(TITLE_ARG)
+								.then(argument(TITLE_ARG, text())
+										.executes(Commands::onEditTitle)))
+						.then(literal(CHECKER_ARG)
+								.then(argument(CHECKER_ARG, identifier())
+										.suggests(CHECK_SUGGESTER)
+										.executes(Commands::onEditChecker))));
 
-		root.then(create.then(typeArg.then(idArg.then(titleArg))));
-		root.then(edit.then(checker.then(checkerArg)));
-		root.then(open.then(id2Arg.then(target)));
-		root.then(delete.then(id3Arg));
+		var open = literal(OPEN_ARG)
+				.then(argument(ID_ARG, identifier())
+						.suggests(ID_SUGGESTER)
+						.requires(ServerCommandSource::isExecutedByPlayer)
+						.executes(Commands::onOpen)
+						.then(argument(TARGET_ARG, players())
+								.executes(Commands::onOpen)));
+
+		var delete = literal(DELETE_ARG)
+				.then(argument(ID_ARG, identifier())
+						.suggests(ID_SUGGESTER)
+						.executes(Commands::onDelete));
+
+		root.then(create);
+		root.then(edit);
+		root.then(open);
+		root.then(delete);
 
 		dispatcher.register(root);
 	}
-	
-	private int onMake(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
-		var type = RegistryEntryArgumentType.getRegistryEntry(context, "type", RegistryKeys.SCREEN_HANDLER);
-		var id = IdentifierArgumentType.getIdentifier(context, "id");
-		var title = ((ArgumentChecker)context).hasArgument("title") ? TextArgumentType.getTextArgument(context, "title") : Text.empty();
 
-		if (inventories.containsKey(id)) {
-			throw ALREADY_EXISTS_EXCEPTION.create(id);
-		}
+	private static int onMake(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+		try {
+			var type = getRegistryEntry(context, TYPE_ARG, RegistryKeys.SCREEN_HANDLER);
+			var id = getIdentifier(context, ID_ARG);
+			var title = ((ArgumentChecker)context).hasArgument(TITLE_ARG) ? getTextArgument(context, TITLE_ARG) : Text.empty();
 
-		var inv = new SavableInventory(type.value(), id, title);
-		InventoryLoader.save(inv);
-		inventories.put(id, inv);
-
-		context.getSource().sendFeedback(Text.literal(id+" created"), false);
-		return 1;
-	}
-
-	private int onEdit(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
-		var checker = IdentifierArgumentType.getIdentifier(context, "checker");
-		return 1;
-	}
-
-	private int onOpen(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
-		var id = IdentifierArgumentType.getIdentifier(context, "id");
-		var targets = ((ArgumentChecker)context).hasArgument("target") ? EntityArgumentType.getOptionalPlayers(context, "target") : List.of(context.getSource().getPlayer());
-
-		var inventory = inventories.get(id);
-		if (inventory == null) {
-			inventory = ;
-			if (inventory == null) {
-				throw DOESNT_EXISTS_EXCEPTION.create(id);
+			if (InventoryMaker.getInventory(id) != null) {
+				throw ALREADY_EXISTS_EXCEPTION.create(id);
 			}
 
-			inventories.put(id, inventory);
-		}
+			var inv = new SavableInventory(type.value(), id, title);
+			InventoryLoader.save(inv);
+			InventoryMaker.addInventory(inv);
 
-		targets.forEach(inventory::open);
+			context.getSource().sendFeedback(Text.literal(id+" created"), false);
+			return 1;
+		} catch (Exception e) {
+			e.printStackTrace();
+			throw e;
+		}
+	}
+
+	private static int onEditChecker(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+		var id = getIdentifier(context, ID_ARG);
+		var checker = getIdentifier(context, CHECKER_ARG);
+
+		getOrThrow(id).setChecker(checker);
+		return 1;
+	}
+
+	private static int onEditTitle(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+		var id = getIdentifier(context, ID_ARG);
+		var title = getTextArgument(context, TITLE_ARG);
+
+		getOrThrow(id).setTitle(title);
+		return 1;
+	}
+
+	private static int onOpen(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+		var id = getIdentifier(context, ID_ARG);
+		var targets = ((ArgumentChecker)context).hasArgument(TARGET_ARG) ? getOptionalPlayers(context, TARGET_ARG) : List.of(context.getSource().getPlayer());
+
+		targets.forEach(getOrThrow(id)::open);
 		return targets.size();
 	}
 
-	private int onDelete(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
-		var id = IdentifierArgumentType.getIdentifier(context, "id");
-		var inv = inventories.remove(id);
+	private static int onDelete(CommandContext<ServerCommandSource> context) {
+		var id = getIdentifier(context, ID_ARG);
+		var inv = InventoryMaker.removeInventory(id);
+
 		if (inv != null) {
 			inv.close();
 		}
 		InventoryLoader.delete(id);
 		return 1;
+	}
+
+	private static SavableInventory getOrThrow(Identifier id) throws CommandSyntaxException {
+		var inventory = InventoryMaker.getInventory(id);
+		if (inventory == null) {
+			throw DOESNT_EXISTS_EXCEPTION.create(id);
+		}
+		return inventory;
 	}
 }

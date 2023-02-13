@@ -2,6 +2,9 @@ package megaminds.inventorymaker;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
+
+import org.jetbrains.annotations.Nullable;
 
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.inventory.Inventories;
@@ -22,11 +25,18 @@ import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 
 public class SavableInventory extends SimpleInventory {
+	private static final String TYPE_KEY = "type";
+	private static final String ID_KEY = "id";
+	private static final String TITLE_KEY = "title";
+	private static final String CHECKER_KEY = "checker";
+
 	private static final InventoryChangedListener LISTENER = inv->InventoryLoader.save((SavableInventory)inv);
 
 	private final ScreenHandlerType<?> type;
 	private final Identifier id;
 	private Text title;
+
+	@Nullable
 	private Identifier checker;
 
 	private final Map<ServerPlayerEntity, ScreenHandler> currentPlayers;
@@ -34,9 +44,9 @@ public class SavableInventory extends SimpleInventory {
 	public SavableInventory(ScreenHandlerType<?> type, Identifier id, Text title) {
 		super(Helper.getSize(type));
 		addListener(LISTENER);
-		this.type = type;
-		this.id = id;
-		this.title = title;
+		this.type = Objects.requireNonNull(type);
+		this.id = Objects.requireNonNull(id);
+		this.title = Objects.requireNonNullElseGet(title, Text::empty);
 		this.currentPlayers = new HashMap<>();
 	}
 
@@ -80,7 +90,7 @@ public class SavableInventory extends SimpleInventory {
 	}
 
 	public void setTitle(Text title) {
-		this.title = title;
+		this.title = Objects.requireNonNullElseGet(title, Text::empty);
 		markDirty();
 	}
 
@@ -103,19 +113,19 @@ public class SavableInventory extends SimpleInventory {
 
 	protected NbtCompound save() {
 		var data = new NbtCompound();
-		data.putString("type", Registries.SCREEN_HANDLER.getId(type).toString());
-		data.putString("id", id.toString());
-		data.putString("title", Text.Serializer.toJson(title));
-		data.putString("checker", checker.toString());
+		data.putString(TYPE_KEY, Registries.SCREEN_HANDLER.getId(type).toString());
+		data.putString(ID_KEY, id.toString());
+		data.putString(TITLE_KEY, Text.Serializer.toJson(title));
+		if (checker != null) data.putString(CHECKER_KEY, checker.toString());
 		Inventories.writeNbt(data, stacks);
 		return data;
 	}
 
 	protected static SavableInventory load(NbtCompound data) {
-		var type = Registries.SCREEN_HANDLER.get(new Identifier(data.getString("type")));
-		var id = new Identifier(data.getString("id"));
-		var title = Text.Serializer.fromJson(data.getString("title"));
-		var checker = new Identifier(data.getString("checker"));
+		var type = Objects.requireNonNull(Registries.SCREEN_HANDLER.get(new Identifier(data.getString(TYPE_KEY))));
+		var id = new Identifier(data.getString(ID_KEY));
+		var title = Objects.requireNonNullElseGet(Text.Serializer.fromJson(data.getString(TITLE_KEY)), Text::empty);
+		var checker = data.contains(CHECKER_KEY) ? new Identifier(data.getString(CHECKER_KEY)) : null;
 
 		var inv = new SavableInventory(type, id, title);
 		inv.checker = checker;
