@@ -11,6 +11,7 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.exceptions.DynamicCommandExceptionType;
 import com.mojang.brigadier.suggestion.SuggestionProvider;
 
+import me.lucko.fabric.api.permissions.v0.Permissions;
 import net.minecraft.command.CommandRegistryAccess;
 import net.minecraft.command.CommandSource;
 import static net.minecraft.command.argument.EntityArgumentType.players;
@@ -49,9 +50,11 @@ public class Commands {
 
 	@SuppressWarnings("java:S1172")
 	public static void register(CommandDispatcher<ServerCommandSource> dispatcher, CommandRegistryAccess registryAccess, RegistrationEnvironment environment) {
-		var root = literal(InventoryMaker.MODID);
+		var root = literal(InventoryMaker.MODID)
+				.requires(Permissions.require(InventoryMaker.MODID, true));
 
 		var create = literal(CREATE_ARG)
+				.requires(Permissions.require(InventoryMaker.MODID+'.'+CREATE_ARG, 2))
 				.then(argument(TYPE_ARG, registryEntry(registryAccess, RegistryKeys.SCREEN_HANDLER))
 						.suggests(TYPE_SUGGESTER)
 						.then(argument(ID_ARG, identifier())
@@ -60,6 +63,7 @@ public class Commands {
 										.executes(Commands::onMake))));
 
 		var edit = literal(EDIT_ARG)
+				.requires(Permissions.require(InventoryMaker.MODID+'.'+EDIT_ARG, 2))
 				.then(argument(ID_ARG, identifier())
 						.suggests(ID_SUGGESTER)
 						.then(literal(TITLE_ARG)
@@ -76,9 +80,11 @@ public class Commands {
 						.requires(ServerCommandSource::isExecutedByPlayer)
 						.executes(Commands::onOpen)
 						.then(argument(TARGET_ARG, players())
+								.requires(Permissions.require(InventoryMaker.MODID+'.'+OPEN_ARG+".others", 3))
 								.executes(Commands::onOpen)));
 
 		var delete = literal(DELETE_ARG)
+				.requires(Permissions.require(InventoryMaker.MODID+'.'+DELETE_ARG, 2))
 				.then(argument(ID_ARG, identifier())
 						.suggests(ID_SUGGESTER)
 						.executes(Commands::onDelete));

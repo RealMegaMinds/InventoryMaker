@@ -8,7 +8,8 @@
 		"Hoid2"
 	],
 	"contact": {
-		"sources": "https://github.com/RealMegaMinds/InventoryMaker"
+		"sources": "https://github.com/RealMegaMinds/InventoryMaker",
+		"issues": "https://github.com/RealMegaMinds/InventoryMaker/issues"
 	},
 	"license": "MIT",
 	"icon": "assets/inventorymaker/icon.png",
