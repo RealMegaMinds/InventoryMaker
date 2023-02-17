@@ -29,6 +29,7 @@ public class InventoryMaker implements ModInitializer {
 		});
 		ServerLifecycleEvents.SERVER_STOPPED.register(s->server = null);
 
+		PlaceHolderHelper.register();
 		CommandRegistrationCallback.EVENT.register(Commands::register);
 	}
 

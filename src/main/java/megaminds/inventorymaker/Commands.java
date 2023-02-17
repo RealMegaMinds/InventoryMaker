@@ -1,7 +1,7 @@
 package megaminds.inventorymaker;
 
-import static com.mojang.brigadier.arguments.StringArgumentType.getString;
 import static com.mojang.brigadier.arguments.StringArgumentType.string;
+import static com.mojang.brigadier.arguments.StringArgumentType.getString;
 import static net.minecraft.command.argument.EntityArgumentType.getOptionalPlayers;
 import static net.minecraft.command.argument.EntityArgumentType.players;
 import static net.minecraft.command.argument.IdentifierArgumentType.getIdentifier;
@@ -14,14 +14,11 @@ import static net.minecraft.server.command.CommandManager.argument;
 import static net.minecraft.server.command.CommandManager.literal;
 
 import java.util.List;
-
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.exceptions.DynamicCommandExceptionType;
-import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
 import com.mojang.brigadier.suggestion.SuggestionProvider;
-
 import eu.pb4.placeholders.api.PlaceholderContext;
 import eu.pb4.placeholders.api.Placeholders;
 import me.lucko.fabric.api.permissions.v0.Permissions;
@@ -37,10 +34,18 @@ import net.minecraft.util.Identifier;
 public class Commands {
 	private static final DynamicCommandExceptionType ALREADY_EXISTS_EXCEPTION = new DynamicCommandExceptionType(id->Text.literal("Another inventory with id: " + id + " exists."));
 	private static final DynamicCommandExceptionType DOESNT_EXISTS_EXCEPTION = new DynamicCommandExceptionType(id->Text.literal("No inventory with id: " + id + " exists."));
-	private static final SimpleCommandExceptionType INVALID_ID_EXCEPTION = new SimpleCommandExceptionType(Text.translatable("argument.id.invalid"));
-	private static final SuggestionProvider<ServerCommandSource> TYPE_SUGGESTER = (context, builder) -> CommandSource.suggestFromIdentifier(Registries.SCREEN_HANDLER.stream(), builder, Registries.SCREEN_HANDLER::getId, t->Text.empty());
+
+	private static final SuggestionProvider<ServerCommandSource> CREATE_ID_SUGGESTER = (context, builder) -> {
+		PlaceHolderHelper.addPlaceHolderSuggestions(context, builder);
+		return builder.buildFuture();
+	};
+	private static final SuggestionProvider<ServerCommandSource> ID_SUGGESTER = (context, builder) -> {
+		InventoryMaker.listInventories().stream().map(id->"\""+id+"\"").forEach(builder::suggest);
+		PlaceHolderHelper.addPlaceHolderSuggestions(context, builder);
+		return builder.buildFuture();
+	};
+	private static final SuggestionProvider<ServerCommandSource> TYPE_SUGGESTER = (context, builder) -> CommandSource.suggestIdentifiers(Registries.SCREEN_HANDLER.stream().map(Registries.SCREEN_HANDLER::getId), builder);
 	private static final SuggestionProvider<ServerCommandSource> CHECK_SUGGESTER = (context, builder) -> CommandSource.suggestIdentifiers(context.getSource().getServer().getPredicateManager().getIds(), builder);
-	private static final SuggestionProvider<ServerCommandSource> ID_SUGGESTER = (context, builder) -> CommandSource.suggestIdentifiers(InventoryMaker.listInventories(), builder);
 
 	private static final String ID_ARG = "id";
 	private static final String CREATE_ARG = "create";
@@ -64,9 +69,10 @@ public class Commands {
 				.then(argument(TYPE_ARG, registryEntry(registryAccess, RegistryKeys.SCREEN_HANDLER))
 						.suggests(TYPE_SUGGESTER)
 						.then(argument(ID_ARG, string())
-								.executes(Commands::onMake)
+								.suggests(CREATE_ID_SUGGESTER)
+								.executes(Commands::onCreate)
 								.then(argument(TITLE_ARG, text())
-										.executes(Commands::onMake))));
+										.executes(Commands::onCreate))));
 
 		var edit = literal(EDIT_ARG)
 				.requires(Permissions.require(InventoryMaker.MODID+'.'+EDIT_ARG, 2))
@@ -103,12 +109,11 @@ public class Commands {
 		dispatcher.register(root);
 	}
 
-	private static int onMake(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+	private static int onCreate(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
 		try {
 			var type = getRegistryEntry(context, TYPE_ARG, RegistryKeys.SCREEN_HANDLER);
 			var id = getId(context);
 			var title = ((ArgumentChecker)context).hasArgument(TITLE_ARG) ? getTextArgument(context, TITLE_ARG) : Text.empty();
-			title = Placeholders.parseText(title, PlaceholderContext.of(context.getSource()));
 
 			if (InventoryMaker.getInventory(id) != null) {
 				throw ALREADY_EXISTS_EXCEPTION.create(id);
@@ -137,7 +142,6 @@ public class Commands {
 	private static int onEditTitle(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
 		var id = getId(context);
 		var title = getTextArgument(context, TITLE_ARG);
-		title = Placeholders.parseText(title, PlaceholderContext.of(context.getSource()));
 
 		getOrThrow(id).setTitle(title);
 		return 1;
@@ -151,7 +155,7 @@ public class Commands {
 		return targets.size();
 	}
 
-	private static int onDelete(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+	private static int onDelete(CommandContext<ServerCommandSource> context) {
 		var id = getId(context);
 		var inv = InventoryMaker.removeInventory(id);
 
@@ -162,18 +166,8 @@ public class Commands {
 		return 1;
 	}
 
-	private static Identifier getId(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
-		/**
-		 * TODO create my own ParsedIdentifierArgumentType
-		 */
-		var id = getString(context, ID_ARG);
-		var parsed = Placeholders.parseText(Text.of(id), PlaceholderContext.of(context.getSource())).getString();
-		var result = Identifier.tryParse(parsed);
-		if (result == null) {
-			throw INVALID_ID_EXCEPTION.create();
-		}
-
-		return result;
+	private static Identifier getId(CommandContext<ServerCommandSource> context) {
+		return new Identifier(Placeholders.parseText(Text.of(getString(context, ID_ARG)), PlaceholderContext.of(context.getSource())).getString());
 	}
 
 	private static SavableInventory getOrThrow(Identifier id) throws CommandSyntaxException {

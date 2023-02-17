@@ -38,4 +38,29 @@ public class Helper {
 	public static int getSize(ScreenHandlerType<?> type) {
 		return getHeight(type) * getWidth(type);
 	}
+
+	public static int find(String s, char c) {
+		var lastIndex = -1;
+		var index = s.indexOf(c);
+		var open = false;
+		while (index != -1) {
+			if (index == 0 || s.charAt(index-1) != '\\' || index > 1 && s.charAt(index-2) == '\\') {
+				open = !open;
+			}
+			lastIndex = index;
+			index = s.indexOf(c, index+1);
+		}
+		return open ? lastIndex : -1;
+	}
+
+	public static String[] split(String s, int i) {
+		return new String[] {s.substring(0, i), s.substring(i)};
+	}
+
+	public static String stripQuotes(String s) {
+		if (s.isEmpty() || "\"".equals(s)) return "";
+		var start = s.startsWith("\"") ? 1 : 0;
+		var end = s.endsWith("\"") ? 1 : 0;
+		return s.substring(start, s.length() - end);
+	}
 }

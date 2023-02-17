@@ -6,6 +6,8 @@ import java.util.Objects;
 
 import org.jetbrains.annotations.Nullable;
 
+import eu.pb4.placeholders.api.PlaceholderContext;
+import eu.pb4.placeholders.api.Placeholders;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.inventory.Inventories;
 import net.minecraft.inventory.InventoryChangedListener;
@@ -68,7 +70,8 @@ public class SavableInventory extends SimpleInventory {
 				.parameter(LootContextParameters.ORIGIN, player.getPos())
 				.optionalParameter(LootContextParameters.THIS_ENTITY, player)
 				.build(LootContextTypes.COMMAND))) {
-			player.openHandledScreen(new SimpleNamedScreenHandlerFactory(getFactory(), title));
+			var parsedTitle = Placeholders.parseText(title, PlaceholderContext.of(player));
+			player.openHandledScreen(new SimpleNamedScreenHandlerFactory(getFactory(), parsedTitle));
 		}
 	}
 
