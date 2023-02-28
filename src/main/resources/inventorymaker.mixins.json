@@ -3,7 +3,8 @@
 	"package": "megaminds.inventorymaker.mixin",
 	"compatibilityLevel": "JAVA_17",
 	"mixins": [
-		"CommandContextMixin"
+		"CommandContextMixin",
+		"SimpleInventoryAccessor"
 	],
 	"injectors": {
 		"defaultRequire": 1

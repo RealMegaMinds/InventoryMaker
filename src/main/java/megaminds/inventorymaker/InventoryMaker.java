@@ -1,7 +1,7 @@
 package megaminds.inventorymaker;
 
 import net.fabricmc.api.ModInitializer;
-import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
+import net.fabricmc.fabric.api.command.v1.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.Identifier;
@@ -29,7 +29,6 @@ public class InventoryMaker implements ModInitializer {
 		});
 		ServerLifecycleEvents.SERVER_STOPPED.register(s->server = null);
 
-		PlaceHolderHelper.register();
 		CommandRegistrationCallback.EVENT.register(Commands::register);
 	}
 
