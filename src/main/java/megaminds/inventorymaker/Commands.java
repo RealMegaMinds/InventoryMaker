@@ -89,7 +89,6 @@ public class Commands {
 		var open = literal(OPEN_ARG)
 				.then(argument(ID_ARG, string())
 						.suggests(ID_SUGGESTER)
-						.requires(ServerCommandSource::isExecutedByPlayer)
 						.executes(Commands::onOpen)
 						.then(argument(TARGET_ARG, players())
 								.requires(Permissions.require(InventoryMaker.MODID+'.'+OPEN_ARG+".others", 3))
@@ -149,7 +148,7 @@ public class Commands {
 
 	private static int onOpen(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
 		var id = getId(context);
-		var targets = ((ArgumentChecker)context).hasArgument(TARGET_ARG) ? getOptionalPlayers(context, TARGET_ARG) : List.of(context.getSource().getPlayer());
+		var targets = ((ArgumentChecker)context).hasArgument(TARGET_ARG) ? getOptionalPlayers(context, TARGET_ARG) : List.of(context.getSource().getPlayerOrThrow());
 
 		targets.forEach(getOrThrow(id)::open);
 		return targets.size();
