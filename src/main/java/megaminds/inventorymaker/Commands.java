@@ -24,6 +24,7 @@ import eu.pb4.placeholders.api.Placeholders;
 import me.lucko.fabric.api.permissions.v0.Permissions;
 import net.minecraft.command.CommandRegistryAccess;
 import net.minecraft.command.CommandSource;
+import net.minecraft.loot.LootDataType;
 import net.minecraft.registry.Registries;
 import net.minecraft.registry.RegistryKeys;
 import net.minecraft.server.command.CommandManager.RegistrationEnvironment;
@@ -45,7 +46,7 @@ public class Commands {
 		return builder.buildFuture();
 	};
 	private static final SuggestionProvider<ServerCommandSource> TYPE_SUGGESTER = (context, builder) -> CommandSource.suggestIdentifiers(Registries.SCREEN_HANDLER.stream().map(Registries.SCREEN_HANDLER::getId), builder);
-	private static final SuggestionProvider<ServerCommandSource> CHECK_SUGGESTER = (context, builder) -> CommandSource.suggestIdentifiers(context.getSource().getServer().getPredicateManager().getIds(), builder);
+	private static final SuggestionProvider<ServerCommandSource> CHECK_SUGGESTER = (context, builder) -> CommandSource.suggestIdentifiers(context.getSource().getServer().getLootManager().getIds(LootDataType.PREDICATES), builder);
 
 	private static final String ID_ARG = "id";
 	private static final String CREATE_ARG = "create";
@@ -122,7 +123,7 @@ public class Commands {
 			InventoryLoader.save(inv);
 			InventoryMaker.addInventory(inv);
 
-			context.getSource().sendFeedback(Text.literal(id+" created"), false);
+			context.getSource().sendFeedback(() -> Text.literal(id+" created"), false);
 			return 1;
 		} catch (Exception e) {
 			e.printStackTrace();

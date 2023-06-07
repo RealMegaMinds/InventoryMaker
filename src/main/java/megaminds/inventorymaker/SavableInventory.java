@@ -12,8 +12,10 @@ import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.inventory.Inventories;
 import net.minecraft.inventory.InventoryChangedListener;
 import net.minecraft.inventory.SimpleInventory;
+import net.minecraft.loot.LootDataType;
 import net.minecraft.loot.condition.LootCondition;
-import net.minecraft.loot.context.LootContext.Builder;
+import net.minecraft.loot.context.LootContext;
+import net.minecraft.loot.context.LootContextParameterSet;
 import net.minecraft.loot.context.LootContextParameters;
 import net.minecraft.loot.context.LootContextTypes;
 import net.minecraft.nbt.NbtCompound;
@@ -66,10 +68,10 @@ public class SavableInventory extends SimpleInventory {
 
 	public void open(ServerPlayerEntity player) {
 		LootCondition check;
-		if (checker == null || (check = InventoryMaker.getServer().getPredicateManager().get(checker)) == null || check.test(new Builder(player.getWorld())
-				.parameter(LootContextParameters.ORIGIN, player.getPos())
-				.optionalParameter(LootContextParameters.THIS_ENTITY, player)
-				.build(LootContextTypes.COMMAND))) {
+		if (checker == null || (check = InventoryMaker.getServer().getLootManager().getElement(LootDataType.PREDICATES, checker)) == null || check.test(new LootContext.Builder(new LootContextParameterSet.Builder(player.getServerWorld())
+				.add(LootContextParameters.ORIGIN, player.getPos())
+				.addOptional(LootContextParameters.THIS_ENTITY, player)
+				.build(LootContextTypes.COMMAND)).build(null))) {//TODO Is null ok?
 			var parsedTitle = Placeholders.parseText(title, PlaceholderContext.of(player));
 			player.openHandledScreen(new SimpleNamedScreenHandlerFactory(getFactory(), parsedTitle));
 		}
