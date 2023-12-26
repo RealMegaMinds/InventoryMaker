@@ -12,6 +12,10 @@ import static net.minecraft.command.argument.TextArgumentType.getTextArgument;
 import static net.minecraft.command.argument.TextArgumentType.text;
 import static net.minecraft.server.command.CommandManager.argument;
 import static net.minecraft.server.command.CommandManager.literal;
+import static net.minecraft.command.argument.ItemStackArgumentType.itemStack;
+import static net.minecraft.command.argument.ItemStackArgumentType.getItemStackArgument;
+import static com.mojang.brigadier.arguments.IntegerArgumentType.integer;
+import static com.mojang.brigadier.arguments.IntegerArgumentType.getInteger;
 
 import java.util.List;
 import com.mojang.brigadier.CommandDispatcher;
@@ -35,6 +39,7 @@ import net.minecraft.util.Identifier;
 public class Commands {
 	private static final DynamicCommandExceptionType ALREADY_EXISTS_EXCEPTION = new DynamicCommandExceptionType(id->Text.literal("Another inventory with id: " + id + " exists."));
 	private static final DynamicCommandExceptionType DOESNT_EXISTS_EXCEPTION = new DynamicCommandExceptionType(id->Text.literal("No inventory with id: " + id + " exists."));
+	private static final DynamicCommandExceptionType INVALID_SLOT_EXCEPTION = new DynamicCommandExceptionType(slot->Text.literal("Invalid slot for this inventory: " + slot));
 
 	private static final SuggestionProvider<ServerCommandSource> CREATE_ID_SUGGESTER = (context, builder) -> {
 		PlaceHolderHelper.addPlaceHolderSuggestions(context, builder);
@@ -57,6 +62,9 @@ public class Commands {
 	private static final String OPEN_ARG = "open";
 	private static final String TARGET_ARG = "target";
 	private static final String DELETE_ARG = "delete";
+	private static final String SLOT_ARG = "slot";
+	private static final String ITEM_ARG = "item";
+	private static final String COUNT_ARG = "count";
 
 	private Commands() {}
 
@@ -79,6 +87,11 @@ public class Commands {
 				.requires(Permissions.require(InventoryMaker.MODID+'.'+EDIT_ARG, 2))
 				.then(argument(ID_ARG, string())
 						.suggests(ID_SUGGESTER)
+						.then(literal(SLOT_ARG)
+								.then(argument(SLOT_ARG, integer(0))
+										.then(argument(ITEM_ARG, itemStack(registryAccess))
+												.then(argument(COUNT_ARG, integer(1))
+														.executes(Commands::onEditSlot)))))
 						.then(literal(TITLE_ARG)
 								.then(argument(TITLE_ARG, text())
 										.executes(Commands::onEditTitle)))
@@ -147,12 +160,33 @@ public class Commands {
 		return 1;
 	}
 
-	private static int onOpen(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+	private static int onEditSlot(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
 		var id = getId(context);
-		var targets = ((ArgumentChecker)context).hasArgument(TARGET_ARG) ? getOptionalPlayers(context, TARGET_ARG) : List.of(context.getSource().getPlayerOrThrow());
+		var slot = getInteger(context, SLOT_ARG);
+		var inventory = getOrThrow(id);
+		if (inventory.size() < slot) {
+			throw INVALID_SLOT_EXCEPTION.create(slot);
+		}
 
-		targets.forEach(getOrThrow(id)::open);
-		return targets.size();
+		var item = getItemStackArgument(context, ITEM_ARG);
+		var count = getInteger(context, COUNT_ARG);
+		var stack = item.createStack(count, true);
+
+		inventory.setStack(slot, stack);
+		return 1;
+	}
+
+	private static int onOpen(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+		try {
+			var id = getId(context);
+			var targets = ((ArgumentChecker)context).hasArgument(TARGET_ARG) ? getOptionalPlayers(context, TARGET_ARG) : List.of(context.getSource().getPlayerOrThrow());
+
+			targets.forEach(getOrThrow(id)::open);
+			return targets.size();
+		} catch (Exception e) {
+			e.printStackTrace();
+			throw e;
+		}
 	}
 
 	private static int onDelete(CommandContext<ServerCommandSource> context) {
