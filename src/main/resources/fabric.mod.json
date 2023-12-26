@@ -23,7 +23,7 @@
 		"inventorymaker.mixins.json"
 	],
 	"depends": {
-		"minecraft": "~1.20",
+		"minecraft": "~1.20.4",
 		"fabric-api": "*"
 	}
 }

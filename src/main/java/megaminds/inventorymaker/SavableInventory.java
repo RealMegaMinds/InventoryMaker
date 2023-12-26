@@ -3,6 +3,7 @@ package megaminds.inventorymaker;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 
 import org.jetbrains.annotations.Nullable;
 
@@ -71,7 +72,7 @@ public class SavableInventory extends SimpleInventory {
 		if (checker == null || (check = InventoryMaker.getServer().getLootManager().getElement(LootDataType.PREDICATES, checker)) == null || check.test(new LootContext.Builder(new LootContextParameterSet.Builder(player.getServerWorld())
 				.add(LootContextParameters.ORIGIN, player.getPos())
 				.addOptional(LootContextParameters.THIS_ENTITY, player)
-				.build(LootContextTypes.COMMAND)).build(null))) {//TODO Is null ok?
+				.build(LootContextTypes.COMMAND)).build(Optional.empty()))) {
 			var parsedTitle = Placeholders.parseText(title, PlaceholderContext.of(player));
 			player.openHandledScreen(new SimpleNamedScreenHandlerFactory(getFactory(), parsedTitle));
 		}
@@ -120,21 +121,21 @@ public class SavableInventory extends SimpleInventory {
 		var data = new NbtCompound();
 		data.putString(TYPE_KEY, Registries.SCREEN_HANDLER.getId(type).toString());
 		data.putString(ID_KEY, id.toString());
-		data.putString(TITLE_KEY, Text.Serializer.toJson(title));
+		data.putString(TITLE_KEY, Text.Serialization.toJsonString(title));
 		if (checker != null) data.putString(CHECKER_KEY, checker.toString());
-		Inventories.writeNbt(data, stacks);
+		Inventories.writeNbt(data, heldStacks);
 		return data;
 	}
 
 	protected static SavableInventory load(NbtCompound data) {
 		var type = Objects.requireNonNull(Registries.SCREEN_HANDLER.get(new Identifier(data.getString(TYPE_KEY))));
 		var id = new Identifier(data.getString(ID_KEY));
-		var title = Objects.requireNonNullElseGet(Text.Serializer.fromJson(data.getString(TITLE_KEY)), Text::empty);
+		var title = Objects.requireNonNullElseGet(Text.Serialization.fromJson(data.getString(TITLE_KEY)), Text::empty);
 		var checker = data.contains(CHECKER_KEY) ? new Identifier(data.getString(CHECKER_KEY)) : null;
 
 		var inv = new SavableInventory(type, id, title);
 		inv.checker = checker;
-		Inventories.readNbt(data, inv.stacks);
+		Inventories.readNbt(data, inv.heldStacks);
 		return inv;
 	}
 

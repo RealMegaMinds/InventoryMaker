@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Optional;
 
 import net.minecraft.nbt.NbtIo;
+import net.minecraft.nbt.NbtSizeTracker;
 import net.minecraft.nbt.visitor.StringNbtWriter;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.WorldSavePath;
@@ -46,7 +47,7 @@ public class InventoryLoader {
 		}
 
 		try (var in = Files.newInputStream(path.get())) {
-			var data = NbtIo.readCompressed(in);
+			var data = NbtIo.readCompressed(in, NbtSizeTracker.ofUnlimitedBytes());
 			return SavableInventory.load(data);
 		} catch (IOException e) {
 			e.printStackTrace();
