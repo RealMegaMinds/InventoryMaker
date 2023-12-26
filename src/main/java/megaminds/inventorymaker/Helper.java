@@ -8,6 +8,15 @@ import net.minecraft.screen.ScreenHandlerType;
 public class Helper {
 	private Helper() {}
 
+	public static final int TYPE_UNIMPLEMENTED = -1;
+	public static final int TYPE_DISALLOWED = -2;
+
+	public enum Status {
+		DISALLOWED,
+		UNIMPLEMENTED,
+		IMPLEMENTED
+	}
+
 	private static final Object2IntMap<ScreenHandlerType<?>> SIZE_MAP;
 	static {
 		var sizeMap = new Object2IntOpenHashMap<ScreenHandlerType<?>>();
@@ -18,7 +27,7 @@ public class Helper {
 		sizeMap.put(ScreenHandlerType.GENERIC_9X5, 45);
 		sizeMap.put(ScreenHandlerType.GENERIC_9X6, 54);
 		sizeMap.put(ScreenHandlerType.GENERIC_3X3, 9);
-		sizeMap.put(ScreenHandlerType.CRAFTER_3X3, 10);
+		sizeMap.put(ScreenHandlerType.CRAFTER_3X3, -2);	//confusing function
 		sizeMap.put(ScreenHandlerType.ANVIL, 3);
 		sizeMap.put(ScreenHandlerType.BEACON, 1);
 		sizeMap.put(ScreenHandlerType.BLAST_FURNACE, 3);
@@ -29,7 +38,7 @@ public class Helper {
 		sizeMap.put(ScreenHandlerType.GRINDSTONE, 3);
 		sizeMap.put(ScreenHandlerType.HOPPER, 5);
 		sizeMap.put(ScreenHandlerType.LECTERN, 1);
-		sizeMap.put(ScreenHandlerType.LOOM, 4);
+		sizeMap.put(ScreenHandlerType.LOOM, -2);	//causes crashes
 		sizeMap.put(ScreenHandlerType.MERCHANT, 3);
 		sizeMap.put(ScreenHandlerType.SHULKER_BOX, 27);
 		sizeMap.put(ScreenHandlerType.SMITHING, 3);
@@ -40,7 +49,11 @@ public class Helper {
 	}
 
 	public static int getSize(ScreenHandlerType<?> type) {
-		return SIZE_MAP.getInt(type);
+		return SIZE_MAP.getOrDefault(type, -1);
+	}
+
+	public static Status getStatus(ScreenHandlerType<?> type) {
+		return Status.values()[Math.min(getSize(type)+2, 3)];
 	}
 
 	public static int find(String s, char c) {

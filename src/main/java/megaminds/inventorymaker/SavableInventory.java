@@ -131,6 +131,15 @@ public class SavableInventory extends SimpleInventory {
 
 	protected static SavableInventory load(NbtCompound data) {
 		var type = Objects.requireNonNull(Registries.SCREEN_HANDLER.get(new Identifier(data.getString(TYPE_KEY))));
+		var typeStatus = Helper.getStatus(type);
+		if (typeStatus == Helper.Status.DISALLOWED) {
+			InventoryMaker.LOGGER.warn("Type '{}' is disallowed.", type);
+			return null;
+		} else if (typeStatus == Helper.Status.UNIMPLEMENTED) {
+			InventoryMaker.LOGGER.warn("Type '{}' is unimplemented. Please contact the developer.", type);
+			return null;
+		}
+
 		var id = new Identifier(data.getString(ID_KEY));
 		var title = Objects.requireNonNullElseGet(Text.Serialization.fromJson(data.getString(TITLE_KEY)), Text::empty);
 		var checker = data.contains(CHECKER_KEY) ? new Identifier(data.getString(CHECKER_KEY)) : null;

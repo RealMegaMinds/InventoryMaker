@@ -50,7 +50,7 @@ public class Commands {
 		PlaceHolderHelper.addPlaceHolderSuggestions(context, builder);
 		return builder.buildFuture();
 	};
-	private static final SuggestionProvider<ServerCommandSource> TYPE_SUGGESTER = (context, builder) -> CommandSource.suggestIdentifiers(Registries.SCREEN_HANDLER.stream().map(Registries.SCREEN_HANDLER::getId), builder);
+	private static final SuggestionProvider<ServerCommandSource> TYPE_SUGGESTER = (context, builder) -> CommandSource.suggestIdentifiers(Registries.SCREEN_HANDLER.stream().filter(h -> Helper.getStatus(h) == Helper.Status.IMPLEMENTED).map(Registries.SCREEN_HANDLER::getId), builder);
 	private static final SuggestionProvider<ServerCommandSource> CHECK_SUGGESTER = (context, builder) -> CommandSource.suggestIdentifiers(context.getSource().getServer().getLootManager().getIds(LootDataType.PREDICATES), builder);
 
 	private static final String ID_ARG = "id";
@@ -124,7 +124,16 @@ public class Commands {
 
 	private static int onCreate(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
 		try {
-			var type = getRegistryEntry(context, TYPE_ARG, RegistryKeys.SCREEN_HANDLER);
+			var type = getRegistryEntry(context, TYPE_ARG, RegistryKeys.SCREEN_HANDLER).value();
+			var typeStatus = Helper.getStatus(type);
+			if (typeStatus == Helper.Status.DISALLOWED) {
+				context.getSource().sendError(Text.literal("Type '"+type+"' is disallowed."));
+				return 0;
+			} else if (typeStatus == Helper.Status.UNIMPLEMENTED) {
+				context.getSource().sendError(Text.literal("Type '"+type+"' is unimplemented. Please contact the developer."));
+				return 0;
+			}
+
 			var id = getId(context);
 			var title = ((ArgumentChecker)context).hasArgument(TITLE_ARG) ? getTextArgument(context, TITLE_ARG) : Text.empty();
 
@@ -132,7 +141,7 @@ public class Commands {
 				throw ALREADY_EXISTS_EXCEPTION.create(id);
 			}
 
-			var inv = new SavableInventory(type.value(), id, title);
+			var inv = new SavableInventory(type, id, title);
 			InventoryLoader.save(inv);
 			InventoryMaker.addInventory(inv);
 
