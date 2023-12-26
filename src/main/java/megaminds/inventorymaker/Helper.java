@@ -1,42 +1,46 @@
 package megaminds.inventorymaker;
 
+import it.unimi.dsi.fastutil.objects.Object2IntMap;
+import it.unimi.dsi.fastutil.objects.Object2IntMaps;
+import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import net.minecraft.screen.ScreenHandlerType;
 
 public class Helper {
 	private Helper() {}
 
-	public static int getHeight(ScreenHandlerType<?> type) {
-		if (ScreenHandlerType.GENERIC_9X6.equals(type)) {
-			return 6;
-		} else if (ScreenHandlerType.GENERIC_9X5.equals(type) || ScreenHandlerType.CRAFTING.equals(type)) {
-			return 5;
-		} else if (ScreenHandlerType.GENERIC_9X4.equals(type)) {
-			return 4;
-		} else if (ScreenHandlerType.GENERIC_9X2.equals(type) || ScreenHandlerType.ENCHANTMENT.equals(type) || ScreenHandlerType.STONECUTTER.equals(type)) {
-			return 2;
-		} else if (ScreenHandlerType.GENERIC_9X1.equals(type) || ScreenHandlerType.BEACON.equals(type) || ScreenHandlerType.HOPPER.equals(type) || ScreenHandlerType.BREWING_STAND.equals(type)) {
-			return 1;
-		}
-
-		return 3;
-	}
-
-	public static int getWidth(ScreenHandlerType<?> type) {
-		if (ScreenHandlerType.CRAFTING.equals(type)) {
-			return 2;
-		} else if (ScreenHandlerType.GENERIC_3X3.equals(type)) {
-			return 3;
-		} else if (ScreenHandlerType.HOPPER.equals(type) || ScreenHandlerType.BREWING_STAND.equals(type)) {
-			return 5;
-		} else if (ScreenHandlerType.ENCHANTMENT.equals(type) || ScreenHandlerType.STONECUTTER.equals(type) || ScreenHandlerType.BEACON.equals(type) || ScreenHandlerType.BLAST_FURNACE.equals(type) || ScreenHandlerType.FURNACE.equals(type) || ScreenHandlerType.SMOKER.equals(type) || ScreenHandlerType.ANVIL.equals(type) || ScreenHandlerType.SMITHING.equals(type) || ScreenHandlerType.GRINDSTONE.equals(type) || ScreenHandlerType.MERCHANT.equals(type) || ScreenHandlerType.CARTOGRAPHY_TABLE.equals(type) || ScreenHandlerType.LOOM.equals(type)) {
-			return 1;
-		}
-
-		return 9;
+	private static final Object2IntMap<ScreenHandlerType<?>> SIZE_MAP;
+	static {
+		var sizeMap = new Object2IntOpenHashMap<ScreenHandlerType<?>>();
+		sizeMap.put(ScreenHandlerType.GENERIC_9X1, 9);
+		sizeMap.put(ScreenHandlerType.GENERIC_9X2, 18);
+		sizeMap.put(ScreenHandlerType.GENERIC_9X3, 27);
+		sizeMap.put(ScreenHandlerType.GENERIC_9X4, 36);
+		sizeMap.put(ScreenHandlerType.GENERIC_9X5, 45);
+		sizeMap.put(ScreenHandlerType.GENERIC_9X6, 54);
+		sizeMap.put(ScreenHandlerType.GENERIC_3X3, 9);
+		sizeMap.put(ScreenHandlerType.CRAFTER_3X3, 10);
+		sizeMap.put(ScreenHandlerType.ANVIL, 3);
+		sizeMap.put(ScreenHandlerType.BEACON, 1);
+		sizeMap.put(ScreenHandlerType.BLAST_FURNACE, 3);
+		sizeMap.put(ScreenHandlerType.BREWING_STAND, 5);
+		sizeMap.put(ScreenHandlerType.CRAFTING, 10);
+		sizeMap.put(ScreenHandlerType.ENCHANTMENT, 2);
+		sizeMap.put(ScreenHandlerType.FURNACE, 3);
+		sizeMap.put(ScreenHandlerType.GRINDSTONE, 3);
+		sizeMap.put(ScreenHandlerType.HOPPER, 5);
+		sizeMap.put(ScreenHandlerType.LECTERN, 1);
+		sizeMap.put(ScreenHandlerType.LOOM, 4);
+		sizeMap.put(ScreenHandlerType.MERCHANT, 3);
+		sizeMap.put(ScreenHandlerType.SHULKER_BOX, 27);
+		sizeMap.put(ScreenHandlerType.SMITHING, 3);
+		sizeMap.put(ScreenHandlerType.SMOKER, 3);
+		sizeMap.put(ScreenHandlerType.CARTOGRAPHY_TABLE, 3);
+		sizeMap.put(ScreenHandlerType.STONECUTTER, 2);
+		SIZE_MAP = Object2IntMaps.unmodifiable(sizeMap);
 	}
 
 	public static int getSize(ScreenHandlerType<?> type) {
-		return getHeight(type) * getWidth(type);
+		return SIZE_MAP.getInt(type);
 	}
 
 	public static int find(String s, char c) {
