@@ -21,6 +21,8 @@ import net.minecraft.loot.context.LootContextParameters;
 import net.minecraft.loot.context.LootContextTypes;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.registry.Registries;
+import net.minecraft.screen.ArrayPropertyDelegate;
+import net.minecraft.screen.LecternScreenHandler;
 import net.minecraft.screen.ScreenHandler;
 import net.minecraft.screen.ScreenHandlerFactory;
 import net.minecraft.screen.ScreenHandlerType;
@@ -140,6 +142,18 @@ public class SavableInventory extends SimpleInventory {
 	}
 
 	private ScreenHandlerFactory getFactory() {
-		return (syncId, playerInv, player) -> new ServerScreenHandler(type, syncId, this, playerInv);
+		return (syncId, playerInv, player) -> {
+			if (type.equals(ScreenHandlerType.LECTERN)) {
+				return new LecternScreenHandler(syncId, this, new ArrayPropertyDelegate(1)) {
+					@Override
+					public boolean onButtonClick(PlayerEntity player, int id) {
+						if (id == LecternScreenHandler.TAKE_BOOK_BUTTON_ID)
+							return false;
+						return super.onButtonClick(player, id);
+					}
+				};
+			}
+			return new ServerScreenHandler(type, syncId, this, playerInv);
+		};
 	}
 }
