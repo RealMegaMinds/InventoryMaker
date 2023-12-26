@@ -62,7 +62,7 @@ public class InventoryLoader {
 
 		var data = inventory.save();
 		try (var out = Files.newOutputStream(path.get())) {
-			NbtIo.writeCompressed(inventory.save(), out);
+			NbtIo.writeCompressed(data, out);
 		} catch (IOException e) {
 			e.printStackTrace();
 			InventoryMaker.LOGGER.warn("Error saving {}. Inventory data: {}", inventory.getId(), new StringNbtWriter().apply(data));
