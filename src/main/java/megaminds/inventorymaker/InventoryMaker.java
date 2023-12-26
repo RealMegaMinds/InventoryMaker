@@ -23,11 +23,14 @@ public class InventoryMaker implements ModInitializer {
 	@Override
 	@SuppressWarnings("java:S2696")
 	public void onInitialize() {
-		ServerLifecycleEvents.SERVER_STARTED.register(s-> {
+		ServerLifecycleEvents.SERVER_STARTED.register(s -> {
 			server = s;
 			InventoryLoader.list().forEach(i->INVENTORIES.putIfAbsent(i, null));
 		});
-		ServerLifecycleEvents.SERVER_STOPPED.register(s->server = null);
+		ServerLifecycleEvents.SERVER_STOPPED.register(s -> {
+			INVENTORIES.clear();
+			server = null;
+		});
 
 		PlaceHolderHelper.register();
 		CommandRegistrationCallback.EVENT.register(Commands::register);
