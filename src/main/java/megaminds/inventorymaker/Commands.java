@@ -124,13 +124,13 @@ public class Commands {
 
 	private static int onCreate(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
 		try {
-			var type = getRegistryEntry(context, TYPE_ARG, RegistryKeys.SCREEN_HANDLER).value();
-			var typeStatus = Helper.getStatus(type);
+			var type = getRegistryEntry(context, TYPE_ARG, RegistryKeys.SCREEN_HANDLER);
+			var typeStatus = Helper.getStatus(type.value());
 			if (typeStatus == Helper.Status.DISALLOWED) {
-				context.getSource().sendError(Text.literal("Type '"+type+"' is disallowed."));
+				context.getSource().sendError(Text.literal("Type '"+type.registryKey().getValue()+"' is disallowed."));
 				return 0;
 			} else if (typeStatus == Helper.Status.UNIMPLEMENTED) {
-				context.getSource().sendError(Text.literal("Type '"+type+"' is unimplemented. Please contact the developer."));
+				context.getSource().sendError(Text.literal("Type '"+type.registryKey().getValue()+"' is unimplemented. Please contact the developer."));
 				return 0;
 			}
 
@@ -141,7 +141,7 @@ public class Commands {
 				throw ALREADY_EXISTS_EXCEPTION.create(id);
 			}
 
-			var inv = new SavableInventory(type, id, title);
+			var inv = new SavableInventory(type.value(), id, title);
 			InventoryLoader.save(inv);
 			InventoryMaker.addInventory(inv);
 

@@ -130,13 +130,14 @@ public class SavableInventory extends SimpleInventory {
 	}
 
 	protected static SavableInventory load(NbtCompound data) {
-		var type = Objects.requireNonNull(Registries.SCREEN_HANDLER.get(new Identifier(data.getString(TYPE_KEY))));
+		var typeId = new Identifier(data.getString(TYPE_KEY));
+		var type = Objects.requireNonNull(Registries.SCREEN_HANDLER.get(typeId));
 		var typeStatus = Helper.getStatus(type);
 		if (typeStatus == Helper.Status.DISALLOWED) {
-			InventoryMaker.LOGGER.warn("Type '{}' is disallowed.", type);
+			InventoryMaker.LOGGER.warn("Type '{}' is disallowed.", typeId);
 			return null;
 		} else if (typeStatus == Helper.Status.UNIMPLEMENTED) {
-			InventoryMaker.LOGGER.warn("Type '{}' is unimplemented. Please contact the developer.", type);
+			InventoryMaker.LOGGER.warn("Type '{}' is unimplemented. Please contact the developer.", typeId);
 			return null;
 		}
 
