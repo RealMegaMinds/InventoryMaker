@@ -6,42 +6,14 @@ import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 
 import eu.pb4.placeholders.api.PlaceholderContext;
-import eu.pb4.placeholders.api.PlaceholderResult;
 import eu.pb4.placeholders.api.Placeholders;
-import net.minecraft.scoreboard.Team;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.Identifier;
 
 public class PlaceHolderHelper {
-	private static final String PLAYER = "player";
-	private static final String NO_PLAYER = "No player!";
-
 	private PlaceHolderHelper() {}
-
-	public static void register() {
-		Placeholders.register(new Identifier(PLAYER, "team_name"), (ctx, arg) -> {
-			if (!ctx.hasPlayer()) return PlaceholderResult.invalid(NO_PLAYER);
-
-			var team = ctx.player().getScoreboardTeam();
-			return PlaceholderResult.value(Text.of(team==null ? "" : team.getName()));
-		});
-
-		Placeholders.register(new Identifier(PLAYER, "team_displayname"), (ctx, arg) -> {
-			if (!ctx.hasPlayer()) return PlaceholderResult.invalid(NO_PLAYER);
-
-			var team = ((Team)ctx.player().getScoreboardTeam());
-			return PlaceholderResult.value(team==null ? Text.empty() : team.getDisplayName());
-		});
-
-		Placeholders.register(new Identifier(PLAYER, "team_displayname_formatted"), (ctx, arg) -> {
-			if (!ctx.hasPlayer()) return PlaceholderResult.invalid(NO_PLAYER);
-
-			var team = (Team) ctx.player().getScoreboardTeam();
-			return PlaceholderResult.value(team==null ? Text.empty() : team.getFormattedName());
-		});
-	}
 
 	public static void addPlaceHolderSuggestions(CommandContext<ServerCommandSource> context, SuggestionsBuilder builder) {
 		var id = builder.getRemaining();
@@ -69,6 +41,7 @@ public class PlaceHolderHelper {
 		return Placeholders.getPlaceholders().keySet().stream().map(Object::toString).filter(id->id.startsWith(arr[1])).map(arr[0]::concat).toList();
 	}
 
+	@SuppressWarnings("deprecation")
 	public static String getPlaceHolderError(String s, PlaceholderContext context) {
 		var matcher = Placeholders.PLACEHOLDER_PATTERN.matcher(s);
 		while (matcher.find()) {

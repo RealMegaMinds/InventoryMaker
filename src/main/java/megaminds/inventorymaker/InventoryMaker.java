@@ -32,7 +32,6 @@ public class InventoryMaker implements ModInitializer {
 			server = null;
 		});
 
-		PlaceHolderHelper.register();
 		CommandRegistrationCallback.EVENT.register(Commands::register);
 	}
 
