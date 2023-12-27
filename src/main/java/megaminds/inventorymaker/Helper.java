@@ -12,9 +12,9 @@ public class Helper {
 	public static final int TYPE_DISALLOWED = -2;
 
 	public enum Status {
-		DISALLOWED,
+		IMPLEMENTED,
 		UNIMPLEMENTED,
-		IMPLEMENTED
+		DISALLOWED
 	}
 
 	private static final Object2IntMap<ScreenHandlerType<?>> SIZE_MAP;
@@ -53,7 +53,11 @@ public class Helper {
 	}
 
 	public static Status getStatus(ScreenHandlerType<?> type) {
-		return Status.values()[Math.min(getSize(type)+2, 3)];
+		return switch (getSize(type)) {
+			case TYPE_DISALLOWED -> Status.DISALLOWED;
+			case TYPE_UNIMPLEMENTED -> Status.UNIMPLEMENTED;
+			default -> Status.IMPLEMENTED;
+		};
 	}
 
 	public static int find(String s, char c) {
