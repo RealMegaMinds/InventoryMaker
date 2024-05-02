@@ -6,8 +6,8 @@ import static net.minecraft.command.argument.EntityArgumentType.getOptionalPlaye
 import static net.minecraft.command.argument.EntityArgumentType.players;
 import static net.minecraft.command.argument.IdentifierArgumentType.getIdentifier;
 import static net.minecraft.command.argument.IdentifierArgumentType.identifier;
-import static net.minecraft.command.argument.RegistryEntryArgumentType.getRegistryEntry;
-import static net.minecraft.command.argument.RegistryEntryArgumentType.registryEntry;
+import static net.minecraft.command.argument.RegistryEntryReferenceArgumentType.getRegistryEntry;
+import static net.minecraft.command.argument.RegistryEntryReferenceArgumentType.registryEntry;
 import static net.minecraft.command.argument.TextArgumentType.getTextArgument;
 import static net.minecraft.command.argument.TextArgumentType.text;
 import static net.minecraft.server.command.CommandManager.argument;
@@ -51,7 +51,7 @@ public class Commands {
 		return builder.buildFuture();
 	};
 	private static final SuggestionProvider<ServerCommandSource> TYPE_SUGGESTER = (context, builder) -> CommandSource.suggestIdentifiers(Registries.SCREEN_HANDLER.stream().filter(h -> Helper.getStatus(h) == Helper.Status.IMPLEMENTED).map(Registries.SCREEN_HANDLER::getId), builder);
-	private static final SuggestionProvider<ServerCommandSource> CHECK_SUGGESTER = (context, builder) -> CommandSource.suggestIdentifiers(context.getSource().getServer().getLootManager().getIds(LootDataType.PREDICATES), builder);
+	private static final SuggestionProvider<ServerCommandSource> CHECK_SUGGESTER = (context, builder) -> CommandSource.suggestIdentifiers(context.getSource().getServer().getReloadableRegistries().getIds(LootDataType.PREDICATES.registryKey()), builder);
 
 	private static final String ID_ARG = "id";
 	private static final String CREATE_ARG = "create";
@@ -68,7 +68,7 @@ public class Commands {
 
 	private Commands() {}
 
-	@SuppressWarnings("java:S1172")
+	@SuppressWarnings("unused")
 	public static void register(CommandDispatcher<ServerCommandSource> dispatcher, CommandRegistryAccess registryAccess, RegistrationEnvironment environment) {
 		var root = literal(InventoryMaker.MODID)
 				.requires(Permissions.require(InventoryMaker.MODID, true));
@@ -80,7 +80,7 @@ public class Commands {
 						.then(argument(ID_ARG, string())
 								.suggests(CREATE_ID_SUGGESTER)
 								.executes(Commands::onCreate)
-								.then(argument(TITLE_ARG, text())
+								.then(argument(TITLE_ARG, text(registryAccess))
 										.executes(Commands::onCreate))));
 
 		var edit = literal(EDIT_ARG)
@@ -93,7 +93,7 @@ public class Commands {
 												.then(argument(COUNT_ARG, integer(1))
 														.executes(Commands::onEditSlot)))))
 						.then(literal(TITLE_ARG)
-								.then(argument(TITLE_ARG, text())
+								.then(argument(TITLE_ARG, text(registryAccess))
 										.executes(Commands::onEditTitle)))
 						.then(literal(CHECKER_ARG)
 								.then(argument(CHECKER_ARG, identifier())

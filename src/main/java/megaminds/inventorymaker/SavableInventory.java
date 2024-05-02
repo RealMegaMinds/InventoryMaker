@@ -71,7 +71,7 @@ public class SavableInventory extends SimpleInventory {
 
 	public void open(ServerPlayerEntity player) {
 		LootCondition check;
-		if (checker == null || (check = InventoryMaker.getServer().getLootManager().getElement(LootDataType.PREDICATES, checker)) == null || check.test(new LootContext.Builder(new LootContextParameterSet.Builder(player.getServerWorld())
+		if (checker == null || (check = InventoryMaker.getServer().getReloadableRegistries().getRegistryManager().get(LootDataType.PREDICATES.registryKey()).get(checker)) == null || check.test(new LootContext.Builder(new LootContextParameterSet.Builder(player.getServerWorld())
 				.add(LootContextParameters.ORIGIN, player.getPos())
 				.addOptional(LootContextParameters.THIS_ENTITY, player)
 				.build(LootContextTypes.COMMAND)).build(Optional.empty()))) {
@@ -123,9 +123,9 @@ public class SavableInventory extends SimpleInventory {
 		var data = new NbtCompound();
 		data.putString(TYPE_KEY, Registries.SCREEN_HANDLER.getId(type).toString());
 		data.putString(ID_KEY, id.toString());
-		data.putString(TITLE_KEY, Text.Serialization.toJsonString(title));
+		data.putString(TITLE_KEY, Text.Serialization.toJsonString(title, InventoryMaker.getServer().getRegistryManager()));
 		if (checker != null) data.putString(CHECKER_KEY, checker.toString());
-		Inventories.writeNbt(data, heldStacks);
+		Inventories.writeNbt(data, heldStacks, InventoryMaker.getServer().getRegistryManager());
 		return data;
 	}
 
@@ -142,12 +142,12 @@ public class SavableInventory extends SimpleInventory {
 		}
 
 		var id = new Identifier(data.getString(ID_KEY));
-		var title = Objects.requireNonNullElseGet(Text.Serialization.fromJson(data.getString(TITLE_KEY)), Text::empty);
+		var title = Objects.requireNonNullElseGet(Text.Serialization.fromJson(data.getString(TITLE_KEY), InventoryMaker.getServer().getRegistryManager()), Text::empty);
 		var checker = data.contains(CHECKER_KEY) ? new Identifier(data.getString(CHECKER_KEY)) : null;
 
 		var inv = new SavableInventory(type, id, title);
 		inv.checker = checker;
-		Inventories.readNbt(data, inv.heldStacks);
+		Inventories.readNbt(data, inv.heldStacks, InventoryMaker.getServer().getRegistryManager());
 		return inv;
 	}
 
