@@ -31,7 +31,7 @@ public class InventoryLoader {
 			return files.map(p->{
 				var pathStr = dir.relativize(p).toString();
 				var splitIndex = pathStr.lastIndexOf(sep);
-				return new Identifier(pathStr.substring(0, splitIndex), pathStr.substring(splitIndex+sep.length(), pathStr.lastIndexOf('.')));
+				return Identifier.of(pathStr.substring(0, splitIndex), pathStr.substring(splitIndex+sep.length(), pathStr.lastIndexOf('.')));
 			}).toList();
 		} catch (IOException e) {
 			e.printStackTrace();

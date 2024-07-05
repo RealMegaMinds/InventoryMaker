@@ -210,7 +210,7 @@ public class Commands {
 	}
 
 	private static Identifier getId(CommandContext<ServerCommandSource> context) {
-		return new Identifier(Placeholders.parseText(Text.of(getString(context, ID_ARG)), PlaceholderContext.of(context.getSource())).getString());
+		return Identifier.of(Placeholders.parseText(Text.of(getString(context, ID_ARG)), PlaceholderContext.of(context.getSource())).getString());
 	}
 
 	private static SavableInventory getOrThrow(Identifier id) throws CommandSyntaxException {

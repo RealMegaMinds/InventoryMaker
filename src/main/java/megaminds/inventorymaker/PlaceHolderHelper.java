@@ -27,7 +27,7 @@ public class PlaceHolderHelper {
 		var error = getPlaceHolderError(id, PlaceholderContext.of(context.getSource()));
 		if (error != null) {
 			builder.suggest(id+" ERROR: "+error, Text.literal("ERROR: "+error).styled(s->s.withColor(Formatting.RED)));
-		} else if (!Identifier.isValid(Helper.stripQuotes(parsed))) {
+		} else if (Identifier.tryParse(Helper.stripQuotes(parsed)) == null) {
 			var idError = Text.translatable("argument.id.invalid").append(": "+parsed).styled(s->s.withColor(Formatting.RED));
 			builder.suggest(id+" ERROR: "+idError.getString(), idError);
 		}

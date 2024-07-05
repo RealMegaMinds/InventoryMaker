@@ -130,7 +130,7 @@ public class SavableInventory extends SimpleInventory {
 	}
 
 	protected static SavableInventory load(NbtCompound data) {
-		var typeId = new Identifier(data.getString(TYPE_KEY));
+		var typeId = Identifier.of(data.getString(TYPE_KEY));
 		var type = Objects.requireNonNull(Registries.SCREEN_HANDLER.get(typeId));
 		var typeStatus = Helper.getStatus(type);
 		if (typeStatus == Helper.Status.DISALLOWED) {
@@ -141,9 +141,9 @@ public class SavableInventory extends SimpleInventory {
 			return null;
 		}
 
-		var id = new Identifier(data.getString(ID_KEY));
+		var id = Identifier.of(data.getString(ID_KEY));
 		var title = Objects.requireNonNullElseGet(Text.Serialization.fromJson(data.getString(TITLE_KEY), InventoryMaker.getServer().getRegistryManager()), Text::empty);
-		var checker = data.contains(CHECKER_KEY) ? new Identifier(data.getString(CHECKER_KEY)) : null;
+		var checker = data.contains(CHECKER_KEY) ? Identifier.of(data.getString(CHECKER_KEY)) : null;
 
 		var inv = new SavableInventory(type, id, title);
 		inv.checker = checker;
